@@ -48,7 +48,8 @@ model.add(Dense(units=1))
 model.compile(optimizer='adam', loss='mean_squared_error')
 
 print("Training model ...")
-model.fit(x_train, y_train, epochs=128, batch_size=32, verbose=0)
+epoch_price = 128
+model.fit(x_train, y_train, epochs=epoch_price, batch_size=32, verbose=0)
 
 test_start = dt.datetime(today.year - 1, today.month, today.day)
 
@@ -57,12 +58,12 @@ actual_prices = test_data['Close'].values
 
 total_dataset = pd.concat((data['Close'], test_data['Close']), axis=0)
 
-model_inputs = total_dataset[len(total_dataset) - len(test_data) - prediction_days:].values
+model_inputs = total_dataset[len(total_dataset) - len(test_data) - 60:].values
 model_inputs = model_inputs.reshape(-1, 1)
 model_inputs = scaler.transform(model_inputs)
 
 # Graph next day's price
-real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
+real_data = [model_inputs[len(model_inputs + 1) - 60:len(model_inputs + 1), 0]]
 real_data = np.array(real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
