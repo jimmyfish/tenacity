@@ -4,18 +4,34 @@ import pandas as pd
 import pandas_datareader as web
 import datetime as dt
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras import layers, Sequential
+from tensorflow.keras import layers, Sequential, models
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 import os
+import shutil
+import sys
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-company = 'ETH-USD'
+company = 'EMTK.JK'
+
+# args = sys.argv
+# try:
+#     epoch_price = int(args[-1])
+# except ValueError:
+#     epoch_price = 128
+
+# company = args[-2] if args[-2] != os.path.basename(__file__) else 'ETH-USD'
+epoch_price = 128
+
 today = dt.datetime.now()
 
 start = dt.datetime(today.year - 1, today.month, today.day)
 
+print(f"Fetching data for {company} from {start.strftime('%b')} {start.year} until {today.strftime('%b')} {today.year}... ", end='', flush=True)
 data = web.DataReader(company, 'yahoo', start, today)
+
+last_data = data['Close'].values[-1]
+print('DONE')
 
 # Prepare data
 scaler = MinMaxScaler(feature_range=(0, 1))
@@ -47,9 +63,11 @@ model.add(Dense(units=1))
 
 model.compile(optimizer='adam', loss='mean_squared_error')
 
-print("Training model ...")
-epoch_price = 128
+print(f"Training model with {epoch_price} epoch(s)... ", end="", flush=True)
+
 model.fit(x_train, y_train, epochs=epoch_price, batch_size=32, verbose=0)
+
+print('DONE', end=" ")
 
 test_start = dt.datetime(today.year - 1, today.month, today.day)
 
@@ -69,4 +87,7 @@ real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
 
 prediction = model.predict(real_data)
 prediction = scaler.inverse_transform(prediction)
+print(f"\nLast tick : {last_data}")
 print(f"Prediction {company} price for tomorrow : {prediction[0][0]}")
+
+print("AI decision making : " + ("LONG" if last_data < prediction[0][0] else "SHORT"))
